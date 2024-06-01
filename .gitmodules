@@ -1,0 +1,3 @@
+[submodule "models/EquipmentModel"]
+	path = models/EquipmentModel
+	url = https://github.com/Talich12/EquipmentModel.git
