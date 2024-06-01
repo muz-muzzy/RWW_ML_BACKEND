@@ -16,7 +16,7 @@ app = Flask(__name__)
 CORS(app=app)
 DATABASE = 'video_analysis.db'
 jacket_model = Jacket_detection("./models/EquipmentModel/weights/jacket.pt", "./models/EquipmentModel/weights/people.pt")
-ducking_model = DuckingModel("./models/DuckingModel/weights/precise_under_train_classifier.h5")
+ducking_model = DuckingModel("./models/DuckingModel/weights/model.h5")
     
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
@@ -58,7 +58,7 @@ def insert_video_with_violations(filename, violations_json):
 def analyze_video(file_path):
     cap = cv2.VideoCapture(file_path)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # кодек X264 для записи в MP4
-    fps = 24.0  # Фреймрейт
+    fps = cap.get(cv2.CAP_PROP_FPS)  # Фреймрейт
     first = True
     filename = file_path[9:]
     count = 0
@@ -93,7 +93,8 @@ def analyze_video(file_path):
                 if end_val == -1:
                     end_val = current_cal
                 elif current_cal - end_val > 2:
-                    val1_arr.append(start_val)
+                    if end_val != start_val:
+                        val1_arr.append(start_val)
                     start_val = -1
                     end_val = -1
                 else:
@@ -107,7 +108,8 @@ def analyze_video(file_path):
                 if end_val2 == -1:
                     end_val2 = current_cal
                 elif current_cal - end_val2 > 2:
-                    val2_arr.append(start_val2)
+                    if end_val2 != start_val2:
+                        val2_arr.append(start_val2)
                     start_val2 = -1
                     end_val2 = -1
                 else:
