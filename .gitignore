@@ -162,3 +162,9 @@ cython_debug/
 #.idea/
 
 /upload
+/trans
+/outputs
+/models/DuckingModel/weights/model.h5
+
+*.jpg
+*.db
