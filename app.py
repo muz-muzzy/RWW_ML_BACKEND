@@ -30,16 +30,8 @@ def create_database_and_tables():
     cursor.execute('''CREATE TABLE IF NOT EXISTS videos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         filename TEXT NOT NULL,
-                        upload_time DATETIME DEFAULT CURRENT_TIMESTAMP
-                    );''')
-
-    # Создание таблицы violations, если она не существует
-    cursor.execute('''CREATE TABLE IF NOT EXISTS violations (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        video_id INTEGER,
-                        start_time REAL,
-                        end_time REAL,
-                        FOREIGN KEY(video_id) REFERENCES videos(id)
+                        upload_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        violations TEXT
                     );''')
 
     conn.commit()
@@ -53,18 +45,25 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/getvideo', methods=['GET'])
-def send_random_video():
+@app.route('/getvideos', methods=['GET'])
+def list_videos():
     # Получаем список всех файлов в папке uploads
     files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isfile(os.path.join(app.config['UPLOAD_FOLDER'], f))]
     
-    # Выбираем случайный файл из списка
     if len(files) > 0:
-        random_file = random.choice(files)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], random_file)
-        return send_from_directory(app.config['UPLOAD_FOLDER'], random_file)
+        # Возвращаем список имен файлов
+        return jsonify({'files': files})
     else:
         return jsonify({'error': 'No videos available'}), 404
+
+@app.route('/getvideo/<filename>', methods=['GET'])
+def send_video(filename):
+    # Проверяем, существует ли файл
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.isfile(file_path):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        return jsonify({'error': 'File not found'}), 404
 
 
 @app.route('/upload', methods=['POST'])
