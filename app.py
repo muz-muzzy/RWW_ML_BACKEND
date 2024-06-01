@@ -57,7 +57,7 @@ def insert_video_with_violations(filename, violations_json):
 
 def analyze_video(file_path):
     cap = cv2.VideoCapture(file_path)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Используйте кодек X264 для записи в MP4
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # кодек X264 для записи в MP4
     fps = 24.0  # Фреймрейт
     first = True
     filename = file_path[9:]
@@ -172,19 +172,16 @@ def send_video(filename):
             vest_violations = violations.get('vest', [])
             ducking_violations = violations.get('ducking', [])
     
-        
             # Создание ответа с файлом и заголовками
             response = make_response(send_from_directory(app.config['OUTPUT_FOLDER'], filename), 200)
             response.headers.add('vest', str(vest_violations))
             response.headers.add('ducking', str(ducking_violations))
-            
             
             return response
         else:
             return jsonify({'error': 'No violations data found for this file'}), 404
     else:
         return jsonify({'error': 'File not found'}), 404
-
 
 
 @app.route('/upload', methods=['POST'])
@@ -211,48 +208,6 @@ def upload_video():
             return jsonify({'message': 'Video uploaded successfully'}), 200
         except Exception as e:
             return jsonify({'error': f'Database error: {str(e)}'}), 500
-
-
-# def process_frame(frame):
-#     results = {}
-#     for model_name, model in models.items():
-#         predictions = model.predict(frame)
-#         # Предполагаем, что модель возвращает координаты начала и конца нарушения
-#         violations = [[prediction[0], prediction[1]] for prediction in predictions]
-#         results[model_name] = violations
-#     return results
-
-# @app.route('/analyze', methods=['POST'])
-# def analyze_video():
-#     if 'file' not in request.files:
-#         return jsonify({'error': 'No file part'}), 400
-#     file = request.files['file']
-#     if file.filename == '':
-#         return jsonify({'error': 'No selected file'}), 400
-#     if file and allowed_file(file.filename):
-#         filename = secure_filename(file.filename)
-#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#         file.save(file_path)
-        
-#         cap = cv2.VideoCapture(file_path)
-#         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-#         all_violations = []
-#         first = True
-#         for i in range(frame_count):
-#             ret, frame = cap.read()
-#             if first:
-#                 width, height, _ = frame.shape()
-#                 first = False
-#             if not ret:
-#                 break
-#             violations = process_frame(frame)
-#             all_violations.append(violations)
-        
-#         cap.release()
-#         os.remove(file_path)  # Удаление временного файла
-        
-#         final_response = {"all_models": all_violations}
-#         return jsonify(final_response), 200
 
 if __name__ == '__main__':
     create_database_and_tables()
