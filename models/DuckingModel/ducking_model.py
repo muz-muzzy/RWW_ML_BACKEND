@@ -5,8 +5,8 @@ from PIL import Image
 from tensorflow.keras.models import load_model
 
 class DuckingModel():
-    def __init__(self):
-        self.model = load_model('./weights/precise_under_train_classifier.h5')
+    def __init__(self, weights_path):
+        self.model = load_model(weights_path)
         self.image_size = (512, 512)
         self.threshold = 0.9
 
