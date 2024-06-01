@@ -3,10 +3,12 @@ import os
 import sqlite3
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
-import cv2
+import cv2 as cv
 import numpy as np
 import shutil
 import random
+from models.DuckingModel.ducking_model import DuckingModel
+from models.EquipmentModel.equipment_model import Jacket_detection
 
 UPLOAD_FOLDER = './upload'
 ALLOWED_EXTENSIONS = {'mp4', 'png'}
