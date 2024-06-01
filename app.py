@@ -1,14 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import sqlite3
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
 import cv2
 import numpy as np
 import shutil
+import random
 
 UPLOAD_FOLDER = './upload'
-ALLOWED_EXTENSIONS = {'mp4'}
+ALLOWED_EXTENSIONS = {'mp4', 'png'}
 app = Flask(__name__)
+CORS(app=app)
 DATABASE = 'video_analysis.db'
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -24,7 +27,7 @@ def create_database_and_tables():
     # Создание таблицы videos, если она не существует
     cursor.execute('''CREATE TABLE IF NOT EXISTS videos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        filename TEXT NOT NULL UNIQUE,
+                        filename TEXT NOT NULL,
                         upload_time DATETIME DEFAULT CURRENT_TIMESTAMP
                     );''')
 
@@ -48,6 +51,20 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/getvideo', methods=['GET'])
+def send_random_video():
+    # Получаем список всех файлов в папке uploads
+    files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isfile(os.path.join(app.config['UPLOAD_FOLDER'], f))]
+    
+    # Выбираем случайный файл из списка
+    if len(files) > 0:
+        random_file = random.choice(files)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], random_file)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], random_file)
+    else:
+        return jsonify({'error': 'No videos available'}), 404
+
+
 @app.route('/upload', methods=['POST'])
 def upload_video():
     if 'file' not in request.files:
@@ -57,7 +74,14 @@ def upload_video():
         return jsonify({'error': 'No selected file'}), 400
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        base_filename, file_extension = os.path.splitext(filename)
+        index = 1
+        new_filename = f"{base_filename} ({index}){file_extension}"
+        while os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], new_filename)):
+            index += 1
+            new_filename = f"{base_filename} ({index}){file_extension}"
+
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], new_filename)
         file.save(file_path)
         
         # Подключение к базе данных
@@ -66,7 +90,7 @@ def upload_video():
         
         # Добавление имени файла в базу данных
         try:
-            cursor.execute("INSERT INTO videos (filename) VALUES (?)", (filename,))
+            cursor.execute("INSERT INTO videos (filename) VALUES (?)", (new_filename,))
             db_conn.commit()
             return jsonify({'message': 'Video uploaded successfully'}), 200
         except Exception as e:
